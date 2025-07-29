@@ -535,10 +535,14 @@ public class Log4jUI implements UIHandler, IMessageEditorController, IHttpListen
                     if (log4j.contains("dnslog-url")) {
                         if (isDnsOrIp) {
                             String logPrefix = getReqTag(baseRequestResponse, analyzeRequest, "dns");
-                            log4jPayload.add(log4j.replace("dnslog-url", logPrefix + dns));
+                            // 新增：为log4j dnslog payload加前缀
+                            String log4jDnslogPayload = logPrefix + "log4j." + dns;
+                            log4jPayload.add(log4j.replace("dnslog-url", log4jDnslogPayload));
                         } else {
                             String logPrefix = getReqTag(baseRequestResponse, analyzeRequest, "ip");
-                            log4jPayload.add(log4j.replace("dnslog-url", ip + "/" + logPrefix));
+                            // 新增：为log4j ip payload加前缀
+                            String log4jIpPayload = ip + "/log4j." + logPrefix;
+                            log4jPayload.add(log4j.replace("dnslog-url", log4jIpPayload));
                         }
                     } else {
                         log4jPayload.add(log4j);
