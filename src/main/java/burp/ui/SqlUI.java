@@ -255,9 +255,10 @@ public class SqlUI implements UIHandler, IMessageEditorController, IHttpListener
 
         // 尝试添加一个url到url表格
         int logid = addUrl(method, url, originalLength, baseRequestResponse);
-        addToVulStr(logid, "检测完成");
-        // 检测常规注入
-        for (IParameter para : paraLists) {
+        
+        try {
+            // 检测常规注入
+            for (IParameter para : paraLists) {
             // 如果参数符合下面的类型，则进行检测
             if (para.getType() == PARAM_URL || para.getType() == PARAM_BODY || para.getType() == PARAM_COOKIE || para.getType() == PARAM_JSON) {
                 String paraName = para.getName();
@@ -550,11 +551,7 @@ public class SqlUI implements UIHandler, IMessageEditorController, IHttpListener
             }
         }
         // 检测header注入
-        if (isCheckHeader) {
-            // 如果header为空，直接返回
-            if (headerList.isEmpty()) {
-                return;
-            }
+        if (isCheckHeader && !headerList.isEmpty()) {
             // 新建一个用于存储新请求头的列表，并复制原始请求头到新列表中
             List<String> newReqheaders = new ArrayList<>(reqheaders);
             for (String reqheadersx : reqheaders) {
@@ -634,8 +631,20 @@ public class SqlUI implements UIHandler, IMessageEditorController, IHttpListener
                 }
             }
         }
-        // 更新数据
-        updateUrl(logid, method, url, originalLength, vul.get(logid).toString(), originalRequestResponse);
+        } catch (Exception e) {
+            // 检测过程中出现异常，记录错误信息
+            addToVulStr(logid, "检测异常: " + e.getMessage());
+            Utils.stderr.println("SQL注入检测异常: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            // 无论是否出现异常，都要更新最终状态
+            // 如果没有异常且正常完成，添加检测完成状态
+            if (!vul.containsKey(logid) || !vul.get(logid).toString().contains("检测异常")) {
+                addToVulStr(logid, "检测完成");
+            }
+            // 更新数据
+            updateUrl(logid, method, url, originalLength, vul.get(logid).toString(), originalRequestResponse);
+        }
     }
     // 在json结果列表中查找指定路径的结果
     private static JsonProcessorUtil.ProcessResult findResultByPath(List<JsonProcessorUtil.ProcessResult> results, String path) {
